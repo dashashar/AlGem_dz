@@ -1,6 +1,6 @@
-import org.w3c.dom.ls.LSOutput;
-
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Scanner;
 
 public class Matrix{
@@ -14,40 +14,48 @@ public class Matrix{
         this.colsCount = colsCount;
     }
 
-    void makeMatrix(){
+    public static Matrix makeMatrix() {
         Scanner sc = new Scanner(System.in);
         System.out.println("Сколько строк будет у матрицы?");
-        int rows=sc.nextInt();
+        int row = Integer.parseInt(sc.next());
         System.out.println("Сколько столбцов будет у матрицы?");
-        int cols=sc.nextInt();
-        double[][] newArray=new double[rows][cols];
+        int col = Integer.parseInt(sc.next());
+        double[][] newArray = new double[row][col];
 
         System.out.println("Если вы хотите ввести матрицу поэлементно, нажмите 1.\nЕсли вы хотите ввести матрицу построчно, нажмите 2.");
-        int way = sc.nextInt();
+        int way = Integer.parseInt(sc.next());
 
-        if (way==1) {
+        if (way == 1) {
             System.out.println("Окей, будем вводить поэлементно.");
-            for (int i = 0; i < rows; i++) {
-                for (int j = 0; j < cols; j++) {
-                    System.out.println("Ведите элемент матрицы с индексом: "+(i+1)+" "+(j+1));
-                    newArray[i][j] = sc.nextInt();
+            for (int i = 0; i < row; i++) {
+                for (int j = 0; j < col; j++) {
+                    System.out.println("Ведите элемент матрицы с индексом: " + (i + 1) + " " + (j + 1));
+                    newArray[i][j] = Integer.parseInt(sc.next());
                 }
             }
         }
-        else if (way==2){
+        else if (way == 2) {
+            Scanner sc2 = new Scanner(System.in);
             System.out.println("Окей, будем вводить построчно.");
-            for (int i = 0; i < rows; i++) {
-                System.out.println("Ведите строку: "+(i+1));
-                for (int j = 0; j < cols; j++) {
-                    newArray[i][j] = sc.nextInt();
+            for (int i = 0; i < row; i++) {
+                System.out.println("Ведите строку: " + (i + 1));
+                sc2.reset();
+                String line = sc2.nextLine();
+                List<String> data = new ArrayList<>(List.of(line.split(" ")));
+                data.removeAll(Arrays.asList("", null));
+                if (data.size() != col) {
+                    throw new RuntimeException("Неверное количество элементов");
+                }
+                for (int j = 0; j < col; j++) {
+                    newArray[i][j] = Double.parseDouble(data.get(j));
                 }
             }
+        } else {
+            throw new RuntimeException("Некорректный ввод");
         }
-        this.array = newArray;
-        this.rowsCount = rows;
-        this.colsCount = cols;
+        return new Matrix(newArray, row, col);
     }
-    void printMatrix(){
+    public void printMatrix(){
         System.out.println("Matrix ("+ rowsCount + "*" + colsCount + "):");
         for (int i = 0; i < rowsCount; i++) {
             for (int j = 0; j < colsCount; j++) {
@@ -56,8 +64,7 @@ public class Matrix{
             System.out.println();
         }
     }
-    double[][] multiMatrix(Matrix other){
-        System.out.println("Давай попробуем умножить матрицы.");
+    public Matrix multiMatrix(Matrix other){
         if (colsCount==other.rowsCount){
             System.out.println("Окей, эти матрицы можно умножить.");
             double[][] newMatrix = new double[rowsCount][other.colsCount];
@@ -68,7 +75,7 @@ public class Matrix{
                     }
                 }
             }
-            return newMatrix;
+            return new Matrix(newMatrix,newMatrix.length,newMatrix[0].length);
         }
         else if (other.colsCount==rowsCount){
             System.out.println("Упс, эти матрицы не получится умножить в таком порядке.\nНо можно поменять их местами и все получится.\nСогласен умножать в обратном порядке?");
@@ -84,7 +91,7 @@ public class Matrix{
                         }
                     }
                 }
-                return newMatrix;
+                return new Matrix(newMatrix,newMatrix.length,newMatrix[0].length);
             }
             System.out.println("Окей, тогда не будем ничего умножать.");
             return null;
@@ -94,10 +101,42 @@ public class Matrix{
             return null;
         }
     }
-//    int rank(){
-//
-//    }
-    double determinant(){
+
+    public int findRank() {
+        int rank = Math.min(rowsCount,colsCount);
+        for (int row = 0; row < rank; row++) {
+            if (array[row][row] != 0) {
+                for (int col = 0; col < rowsCount; col++) {
+                    if (col != row) {
+                        double multiplier = array[col][row] / array[row][row];
+                        for (int i = 0; i < rank; i++) {
+                            array[col][i] -= multiplier * array[row][i];
+                        }
+                    }
+                }
+            } else {
+                boolean reduceRank = true;
+                for (int i = row + 1; i < rowsCount; i++) {
+                    if (array[i][row] != 0) {
+                        double[] temp = array[row];
+                        array[row] = array[i];
+                        array[i] = temp;
+                        reduceRank = false;
+                        break;
+                    }
+                }
+                if (reduceRank) {
+                    rank--;
+                    for (int i = 0; i < rowsCount; i++) {
+                        array[i][row] = array[i][rank];
+                    }
+                }
+                row--;
+            }
+        }
+        return rank;
+    }
+    public double determinant(){
         if(array.length == 2) {
             double det = 0;
             det += array[0][0]*array[1][1];
@@ -121,16 +160,16 @@ public class Matrix{
         }
         return result;
     }
-    double[][] transMatrix(){
-        double[][] matrixT=new double[rowsCount][colsCount];
+    public Matrix transMatrix(){
+        double[][] matrixT=new double[colsCount][rowsCount];
         for (int i=0; i<rowsCount; i++){
             for (int j=0; j<colsCount; j++){
                 matrixT[j][i]=array[i][j];
             }
         }
-        return matrixT;
+        return new Matrix(matrixT,matrixT.length,matrixT[0].length);
     }
-    double[][] solve(Matrix freeCoefficients){
+    public Matrix solve(Matrix freeCoefficients){
         double[][] matrix=new double[rowsCount][colsCount];
         for (int i=0; i<rowsCount; i++){
             for (int j=0; j<rowsCount; j++){
@@ -181,6 +220,6 @@ public class Matrix{
                 }
             }
         }
-        return unknowns;
+        return new Matrix(unknowns,unknowns.length,unknowns[0].length);
     }
 }
