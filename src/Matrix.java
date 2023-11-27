@@ -102,36 +102,60 @@ public class Matrix{
         }
     }
 
-    public int findRank() {
-        int rank = Math.min(rowsCount,colsCount);
+    public Matrix gauss_view(Matrix m){
+        double[][] arr = new double[m.rowsCount][m.colsCount];
+        for (int i = 0; i < m.rowsCount; i++) {
+            for (int j = 0; j < m.colsCount; j++) {
+                arr[i][j] = m.array[i][j];
+            }
+        }
+        int rank = Math.min(m.rowsCount,m.colsCount);
         for (int row = 0; row < rank; row++) {
-            if (array[row][row] != 0) {
-                for (int col = 0; col < rowsCount; col++) {
+            if (arr[row][row] != 0) {
+                for (int col = 0; col < m.rowsCount; col++) {
                     if (col != row) {
-                        double multiplier = array[col][row] / array[row][row];
-                        for (int i = 0; i < rank; i++) {
-                            array[col][i] -= multiplier * array[row][i];
+                        double multiplier = arr[col][row] / arr[row][row];
+                        arr[col][row]=0;
+                        for (int i = row + 1; i < rank; i++) {
+                            arr[col][i] -= multiplier * arr[row][i];
                         }
                     }
                 }
-            } else {
-                boolean reduceRank = true;
-                for (int i = row + 1; i < rowsCount; i++) {
-                    if (array[i][row] != 0) {
-                        double[] temp = array[row];
-                        array[row] = array[i];
-                        array[i] = temp;
-                        reduceRank = false;
+            }
+            else {
+                boolean nonZero=false;
+                for (int i = row + 1; i < m.rowsCount; i++) {
+                    if (arr[i][row] != 0) {
+                        double[] temp = arr[row];
+                        arr[row] = arr[i];
+                        arr[i] = temp;
+                        nonZero=true;
                         break;
                     }
                 }
-                if (reduceRank) {
-                    rank--;
-                    for (int i = 0; i < rowsCount; i++) {
-                        array[i][row] = array[i][rank];
-                    }
+            }
+        }
+        return new Matrix(arr,m.rowsCount,m.colsCount);
+    }
+    public int findRank() {
+        double[][] m = new double[rowsCount][colsCount];
+        for (int i = 0; i < rowsCount; i++) {
+            for (int j = 0; j < colsCount; j++) {
+                m[i][j] = array[i][j];
+            }
+        }
+        Matrix matrix=new Matrix(m,rowsCount,colsCount);
+        matrix=gauss_view(matrix);
+        int rank = rowsCount;
+        for (int i = 0; i < rowsCount; i++) {
+            int c = 0;
+            for (int j = 0; j < colsCount; j++) {
+                if (matrix.array[i][j] == 0) {
+                    c++;
                 }
-                row--;
+            }
+            if (c == colsCount) {
+                rank--;
             }
         }
         return rank;
@@ -177,7 +201,21 @@ public class Matrix{
             }
         }
         if (this.determinant()==0) {
-            System.out.println("Матрица необратима. Невозможно найти решение СЛАУ");
+            System.out.println("Матрица необратима");
+            return null;
+        }
+        else{
+            System.out.println("Матрица обратима");
+        }
+        double[][] extended=new double[rowsCount][colsCount+1];
+        for (int i=0; i<rowsCount; i++){
+            for (int j=0; j<colsCount; j++){
+                extended[i][j]=array[i][j];
+            }
+            extended[i][colsCount]=freeCoefficients.array[i][0];
+        }
+        Matrix extMatrix=new Matrix(extended, extended.length, extended[0].length+1);
+        if (this.findRank()!=extMatrix.findRank()){
             return null;
         }
         double[][] E = new double[rowsCount][colsCount];
@@ -191,7 +229,7 @@ public class Matrix{
         double multiplier;
         for (int k = 0; k < rowsCount; k++) {
             divider = matrix[k][k];
-            for (int j = 0; j < rowsCount; j++) {
+            for (int j = 0; j < colsCount; j++) {
                 matrix[k][j] /= divider;
                 E[k][j] /= divider;
             }
