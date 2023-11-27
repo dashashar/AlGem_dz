@@ -116,20 +116,18 @@ public class Matrix{
                     if (col != row) {
                         double multiplier = arr[col][row] / arr[row][row];
                         arr[col][row]=0;
-                        for (int i = row + 1; i < rank; i++) {
+                        for (int i = row + 1; i < m.colsCount; i++) {
                             arr[col][i] -= multiplier * arr[row][i];
                         }
                     }
                 }
             }
             else {
-                boolean nonZero=false;
                 for (int i = row + 1; i < m.rowsCount; i++) {
                     if (arr[i][row] != 0) {
                         double[] temp = arr[row];
                         arr[row] = arr[i];
                         arr[i] = temp;
-                        nonZero=true;
                         break;
                     }
                 }
